@@ -6,7 +6,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSlot, QThread
 import webbrowser
 from time import sleep
-
+import re
 
 
 
@@ -42,20 +42,23 @@ class Scrape(QThread):
         self.url = 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101'
         self.urlreq = urllib.request.urlopen(self.url).read()
         self.soup = BeautifulSoup(self.urlreq, 'lxml')
-        self.find_deals()
+        #self.find_deals()
 
     def find_deals(self):
-        table = self.soup.find('table', class_='section search-list') # Finding the table that has a class called section search-list
-        url = table.find_all('a') # Finding all the <a> tags in that table
+        table = self.soup.find('table', class_='section search-list')# Finding the table that has a class called section search-list
+        text = re.compile("kW$") #using regex to see if a string ends with kW (this will not get the hrefs of pictures)
+        url = table.find_all('a', href=True, text=text)  # Finding all the <a> tags in that table when the text ends with kW
 
         for href in url:
             ok = href.get('href') # Finding all the href tags
 
-            if ok.startswith('/used') and ok.endswith('#loan=72') == False: # if the tag starts with /used then open it up also ignore loans
-                car_url = "http://www.auto24.ee" + ok # this will be the url we will be working on mainly
-                # webbrowser.open(car_url) # Opening the url for the person to see it (this should be the last step)
-                new_url = urllib.request.urlopen(car_url).read() # the begininng of creating a bs4 object
-                car_deal = BeautifulSoup(new_url, 'lxml') # Making it into an object
+            if ok.startswith('/used') and ok.endswith('#loan=72') == False:  # if the tag starts with /used then open it up also ignore loans
+
+                car_url = "http://www.auto24.ee" + ok  # this will be the url we will be working on mainly
+
+                new_url = urllib.request.urlopen(car_url).read()  # the beginning of creating a bs4 object
+
+                car_deal = BeautifulSoup(new_url, 'lxml')  # Making it into an object
 
                 def car_type():
 
@@ -100,23 +103,25 @@ class Scrape(QThread):
                     car_info_table = car_deal.find('table', class_='section main-data')
                     # Finding the info table
                     table_type = car_info_table.find('tr', class_='field-tehasetahis')
+
                     vin_preview = table_type.find('span', class_= 'preview')
                     try:
+
                         vin = vin_preview.text
                         return True
+
                     except AttributeError:
                         return False
 
-                if car_type() == True and odometer() == True and check_vin() == True:
+                if car_type() is True and odometer() is True and check_vin() is True:
+
                     webbrowser.open(car_url)
+
                     print("Car found!")
-
-
-
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()  # uncomment this later
-    #lol = Scrape()
+    # lol = Scrape()
     sys.exit(app.exec_())
