@@ -51,15 +51,66 @@ class Scrape(QThread):
         for href in url:
             ok = href.get('href') # Finding all the href tags
 
-            if ok.startswith('/used'): # if the tag starts with /used then open it up
+            if ok.startswith('/used') and ok.endswith('#loan=72') == False: # if the tag starts with /used then open it up also ignore loans
                 car_url = "http://www.auto24.ee" + ok # this will be the url we will be working on mainly
-                #webbrowser.open(car_url) # Opening the url for the person to see it (this should be the last step)
+                # webbrowser.open(car_url) # Opening the url for the person to see it (this should be the last step)
                 new_url = urllib.request.urlopen(car_url).read() # the begininng of creating a bs4 object
                 car_deal = BeautifulSoup(new_url, 'lxml') # Making it into an object
-                car_info_table = car_deal.find('table', class_='section main-data')  #Finding the info table
-                a = car_info_table.find('tr', class_='field-liik') #Finding the liik table
-                b = a.find('span', class_='value') #Getting the value
-                print(b.text)
+
+                def car_type():
+
+                    car_info_table = car_deal.find('table', class_='section main-data')  # Finding the info table
+
+                    table_type = car_info_table.find('tr', class_='field-liik')  # Finding the car type table
+
+                    table_value = table_type.find('span', class_='value')  # Getting the value
+
+                    type_of_car = table_value.text
+
+                    if type_of_car == "sõiduauto":
+                        return True
+                    else:
+                        return False
+
+                def odometer():
+
+                    car_info_table = car_deal.find('table', class_='section main-data')
+                    # Finding the info table
+                    table_type = car_info_table.find('tr', class_='field-labisoit')
+                    # Finding the car odometer table
+                    table_value = table_type.find('span', class_='value')
+
+                    try:
+                        odometer_size = table_value.string
+
+                        nonBreakSpace = u'\xa0'  # Creating the breakspace so we could remove that
+
+                        odometer_size_int = odometer_size.replace('km', '')
+
+                        odometer_size_int_new = odometer_size_int.replace(nonBreakSpace, '')  # Removing &nonbreakspace
+
+                        if int(odometer_size_int_new) > 200000: # If there are more than 200k km on the odometer then it's bad
+                            return False
+                        else:
+                            return True
+
+                    except AttributeError:
+                        return False
+                def check_vin():
+                    car_info_table = car_deal.find('table', class_='section main-data')
+                    # Finding the info table
+                    table_type = car_info_table.find('tr', class_='field-tehasetahis')
+                    vin_preview = table_type.find('span', class_= 'preview')
+                    try:
+                        vin = vin_preview.text
+                        return True
+                    except AttributeError:
+                        return False
+
+                if car_type() == True and odometer() == True and check_vin() == True:
+                    webbrowser.open(car_url)
+                    print("Car found!")
+
 
 
 
