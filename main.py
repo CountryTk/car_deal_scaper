@@ -39,7 +39,7 @@ class Scrape(QThread):
     def __init__(self):
         super().__init__()
         self.ok = 'wtf'
-        self.url = 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101'
+        self.url = 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101&ak=50'
         self.urlreq = urllib.request.urlopen(self.url).read()
         self.soup = BeautifulSoup(self.urlreq, 'lxml')
         #self.find_deals()
@@ -112,13 +112,23 @@ class Scrape(QThread):
 
                     except AttributeError:
                         return False
-
-                if car_type() is True and odometer() is True and check_vin() is True:
+                def check_dealer():
+                    car_info_tale = car_deal.find('h1', class_='commonSubtitle')  # GOing in the h1 class
+                    get_dealer = car_info_tale.find('a', class_='dealer-name')  # Then checking if the car dealer is auto24jarelmaks(shit)
+                    try:
+                        scam = get_dealer.text
+                        if scam == "- Autojärelmaks24 Kesk-Sõjamäe":
+                            return False
+                        else:
+                            return True
+                    except AttributeError:
+                        return True
+                if car_type() is True and odometer() is True and check_vin() is True and check_dealer() is True:
 
                     webbrowser.open(car_url)
 
                     print("Car found!")
-
+                check_dealer()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
