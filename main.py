@@ -11,6 +11,7 @@ import re
 
 
 
+value = None
 
 class App(QMainWindow):
     def __init__(self):
@@ -29,26 +30,60 @@ class App(QMainWindow):
         self.setGeometry(self.left, self.top, self.width, self.height)
         label = QLabel(self)
         label.resize(500, 500)
-        label.setText('lk')
-        button = QPushButton("click for magic", self)
-        button.clicked.connect(self.threading.find_deals)
-
+        label.setText('Find your car  T O D A Y !!! ! ! !! ! ')
+        #creating a textbox?
+        self.textbox = QLineEdit(self)
+        self.textbox.move(0,350)
+        self.textbox.resize(100,40)
+        button_submit_page_number = QPushButton("Submit page number", self)
+        button_submit_page_number.move(0,390)
+        #button_submit_page_number.clicked.connect(self.threading.find_deals)
+        button_submit_page_number.clicked.connect(self.on_click)
+        textbox_value = self.textbox.text()
+        print(textbox_value)
         self.show()
-
+    def on_click(self):
+        global value
+        value = self.textbox.text()
+        print(value)
+        self.threading.find_deals()
 class Scrape(QThread):
     def __init__(self):
         super().__init__()
         self.ok = 'wtf'
-        self.url = 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101&ak=50'
-        self.urlreq = urllib.request.urlopen(self.url).read()
-        self.soup = BeautifulSoup(self.urlreq, 'lxml')
+
+        #self.page = input("Enter the page number:")
+        #self.url = ''
+
         #self.find_deals()
 
-    def find_deals(self):
-        table = self.soup.find('table', class_='section search-list')# Finding the table that has a class called section search-list
-        text = re.compile("kW$") #using regex to see if a string ends with kW (this will not get the hrefs of pictures)
-        url = table.find_all('a', href=True, text=text)  # Finding all the <a> tags in that table when the text ends with kW
+        #url = 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101' + '&ak=' + str(50)
 
+
+
+    def find_deals(self):
+        global value
+        value = int(value)
+        def page_algorithm(i): #An algorithm that makes it easy to turn to a next page
+            if i > 1:
+                i = i * 50 - 50
+                return 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101' + '&ak=' + str(i)
+            else:
+                return 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101'
+
+        page_number = page_algorithm(value)
+
+        self.url = page_number
+        self.urlreq = urllib.request.urlopen(self.url).read()
+        self.soup = BeautifulSoup(self.urlreq, 'lxml')
+        table = self.soup.find('table', class_='section search-list')  # Finding the table that has a class called section search-list
+        text = re.compile("kW$")  # using regex to see if a string ends with kW (this will not get the hrefs of pictures)
+        url = table.find_all('a', href=True, text=text)  # Finding all the <a> tags in that table when the text ends with kW
+        def new_page():
+            url = 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101'+'&ak='+str(50)
+            urlreq = urllib.request.urlopen(self.url).read()
+            soup = BeautifulSoup(urlreq, 'lxml')
+        i = 0
         for href in url:
             ok = href.get('href') # Finding all the href tags
 
@@ -57,7 +92,11 @@ class Scrape(QThread):
                 car_url = "http://www.auto24.ee" + ok  # this will be the url we will be working on mainly
 
                 new_url = urllib.request.urlopen(car_url).read()  # the beginning of creating a bs4 object
-
+                i = i + 1
+                print("Cars scanned: {} ".format(i))
+                if 47 <= i <= 50:
+                    print("First page finished") #turn to next page &ak=100
+                    new_page()
                 car_deal = BeautifulSoup(new_url, 'lxml')  # Making it into an object
 
                 def car_type():
@@ -114,10 +153,10 @@ class Scrape(QThread):
                         return False
                 def check_dealer():
                     car_info_tale = car_deal.find('h1', class_='commonSubtitle')  # GOing in the h1 class
-                    get_dealer = car_info_tale.find('a', class_='dealer-name')  # Then checking if the car dealer is auto24jarelmaks(shit)
+                    get_dealer = car_info_tale.find('a', class_='dealer-name')
                     try:
                         scam = get_dealer.text
-                        if scam == "- Autojärelmaks24 Kesk-Sõjamäe":
+                        if scam == "- Autojärelmaks24 Kesk-Sõjamäe" or scam == "- Autojärelmaks24 Lasnamäe":  # Then checking if the car dealer is auto24jarelmaks(shit)
                             return False
                         else:
                             return True
@@ -128,7 +167,7 @@ class Scrape(QThread):
                     webbrowser.open(car_url)
 
                     print("Car found!")
-                check_dealer()
+                #check_dealer()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
