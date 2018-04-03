@@ -167,7 +167,27 @@ class Scrape(QThread):
                     webbrowser.open(car_url)
 
                     print("Car found!")
-                #check_dealer()
+                def check_price():
+                    car_info_table = car_deal.find('table', class_='section main-data')
+
+                    table_type = car_info_table.find('tr', class_='field-hind')
+
+                    price_table = table_type.find('td', class_='field')
+
+                    price = price_table.find('span', class_="value")
+
+                    discount_table_type = car_info_table.find('tr', class_='field-soodushind')
+
+                    try:
+                        discount_price_table = discount_table_type.find('td', class_='field')
+                        discount_price = discount_price_table.find('span', class_="value")
+                        print("Discount price: " + discount_price.text)
+                        print("Price: " + price.text)
+                    except:
+                        print("car has no discount price")
+
+                    #print(discount_price.text)
+                check_price()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
