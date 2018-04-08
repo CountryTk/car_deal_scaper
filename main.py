@@ -261,8 +261,49 @@ class Scrape(QThread):
                     print("Car found, opening url...")
                     webbrowser.open(car_url)
                 elif rwd is True and vin_choice is True and gear_box_choice is True:
-                    webbrowser.open("http://www.auto24.ee/kasutatud/nimekiri.php?bn=2&a=101&aj=&i=1&p=2&ae=2&af=50&ag=0&ag=1&otsi=otsi")
-                    break
+                    def find_rwd_cars():
+                        temp = 1
+                        for page in range(11): # &ak=50
+                            page = temp * 50 - 50
+                            temp += 1
+                            #print(page)
+                            rwd_car_deal = urllib.request.urlopen('http://www.auto24.ee/kasutatud/nimekiri.php?bn=2&a=101&aj=&i=1&p=2&ae=2&af=50&ag=0&ag=1&otsi=otsi&ak=' +str(page)).read()
+                            soup = BeautifulSoup(rwd_car_deal, 'lxml')
+
+                            rwd_table = soup.find('table', class_="section search-list")
+                            rwd_url = rwd_table.find_all('a', href=True, class_="small-image")
+                            car_count = 0
+                            for rwd_href in rwd_url:
+                                rwd_link = rwd_href.get('href')
+                                print(rwd_link)
+
+                                if rwd_link.startswith('/used') and rwd_link.endswith('#loan=72') is False:
+                                    rwd_car_url = "http://www.auto24.ee" + rwd_link
+                                    rwd_car_url_2 = urllib.request.urlopen(rwd_car_url).read()
+
+                                    rwd_car_object = BeautifulSoup(rwd_car_url_2, 'lxml')
+
+                                    car_info_table = rwd_car_object.find('table', class_="section main-data")
+                                    table_type = car_info_table.find('tr', class_="field-tehasetahis")
+                                    table_value = table_type.find('span', class_="preview")
+                                    scam_car_info_table = rwd_car_object.find('h1', class_='commonSubtitle')  # GOing in the h1 class
+                                    scam_get_dealer = scam_car_info_table.find('a', class_='dealer-name')
+                                    try:
+                                        scam = scam_get_dealer.text
+                                        if scam == "- Autojärelmaks24 Kesk-Sõjamäe" or scam == "- Autojärelmaks24 Lasnamäe":  # Then checking if the car dealer is auto24jarelmaks(shit)
+                                            scam_check = True
+                                            print('test')
+                                        else:
+                                            scam_check = False
+                                        x = table_value.text
+                                        if scam_check is False:
+                                            webbrowser.open(rwd_car_url)
+
+                                    except:
+                                        pass
+
+                    find_rwd_cars()
+
 
 
         deals()
