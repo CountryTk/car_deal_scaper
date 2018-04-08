@@ -5,10 +5,11 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAc
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSlot, QThread
 import webbrowser
-from time import sleep
+import pymsgbox
 import os
 
-drive_train_choice = None
+fwd = None
+rwd = None
 vin_choice = None
 gear_box_choice = None
 value = None
@@ -31,8 +32,12 @@ class App(QMainWindow):
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.gear_box = QCheckBox("Manual?", self)
         self.vin = QCheckBox("Check Vin?", self)
+        self.rwd = QCheckBox("RWD?", self)
+
         self.gear_box.move(0, 320)
         self.vin.move(60, 320)
+        self.rwd.move(0, 300)
+
         #creating a textbox
         self.textbox = QLineEdit(self)
         self.textbox.move(0, 350)
@@ -45,20 +50,23 @@ class App(QMainWindow):
         auto24 = QLabel(self)
         auto24_pic = QPixmap(self.auto_pic)
         auto24.setPixmap(auto24_pic)
-        auto24.resize(444,86)
-        auto24.move(350,0)
+        auto24.resize(444, 86)
+        auto24.move(350, 0)
 
         self.show()
     def on_click(self):
         global value
         global gear_box_choice
         global vin_choice
+        global fwd
+        global rwd
         try:
             value = self.textbox.text()
         except:
             os._exit(1)
         gear_box_value = self.gear_box.isChecked()
         vin_box_value = self.vin.isChecked()
+        rwd_check = self.rwd.isChecked()
         if gear_box_value is True:
             gear_box_choice = True
         else:
@@ -67,6 +75,10 @@ class App(QMainWindow):
             vin_choice = True
         else:
             vin_choice = False
+        if rwd_check is True:
+            rwd = True
+        else:
+            rwd = False
 
 
         print(gear_box_value)
@@ -76,15 +88,6 @@ class Scrape(QThread):
     def __init__(self):
         super().__init__()
         self.ok = 'wtf'
-
-        #self.page = input("Enter the page number:")
-        #self.url = ''
-
-        #self.find_deals()
-
-        #url = 'http://www.auto24.ee/kasutatud/nimekiri.php?a=101' + '&ak=' + str(50)
-
-
 
     def find_deals(self):
         global value
@@ -120,6 +123,7 @@ class Scrape(QThread):
                     print("Cars scanned: {} ".format(i))
                     if i >= 50:
                         print("First page finished")
+                        pymsgbox.alert("First page finished!")
                     car_deal = BeautifulSoup(new_url, 'lxml')  # Making it into an object
 
                 def car_type():
@@ -201,16 +205,28 @@ class Scrape(QThread):
                                 return False
                         except AttributeError:
                             return False
-                def check_drivetrain():
-                    car_info_table = car_deal.find('table', class_="section main-data")
-                    table_type = car_info_table.find('tr', class_='field-vedavsild')
-                    value = table_type.find('span', class_='value')
-                    try:
-                        new_value = value.text
-                        if new_value == "tagavedu":
-                            return True
-                    except AttributeError:
-                        return False
+
+                def check_rwd():
+                    if rwd is True:
+                        car_info_table = car_deal.find('table', class_="section main-data")
+                        table_type = car_info_table.find('tr', class_='field-vedavsild')
+                        value = table_type.find('span', class_='value')
+                        try:
+                            new_value = value.text
+                            if new_value == "tagavedu":
+                                return True
+                        except AttributeError:
+                            return False
+                    elif rwd is False:
+                        car_info_table = car_deal.find('table', class_="section main-data")
+                        table_type = car_info_table.find('tr', class_='field-vedavsild')
+                        value = table_type.find('span', class_='value')
+                        try:
+                            new_value = value.text
+                            if new_value == "esivedu":
+                                return True
+                        except AttributeError:
+                            return False
                 def check_dealer():
                     car_info_table = car_deal.find('h1', class_='commonSubtitle')  # GOing in the h1 class
                     get_dealer = car_info_table.find('a', class_='dealer-name')
@@ -238,11 +254,17 @@ class Scrape(QThread):
                         print("car has no discount price")
 
                     #print(discount_price.text)
-
+                def best_car():
+                    pass
                 if car_type() is True and odometer() is True and check_vin() is True and check_dealer() is True and \
-                check_gearbox() is True:
+                check_gearbox() is True and check_rwd() is True:
                     print("Car found, opening url...")
                     webbrowser.open(car_url)
+                elif rwd is True and vin_choice is True and gear_box_choice is True:
+                    webbrowser.open("http://www.auto24.ee/kasutatud/nimekiri.php?bn=2&a=101&aj=&i=1&p=2&ae=2&af=50&ag=0&ag=1&otsi=otsi")
+                    break
+
+
         deals()
 if __name__ == '__main__':
     app = QApplication(sys.argv)
