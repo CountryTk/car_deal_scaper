@@ -1,16 +1,16 @@
 import sys
 from bs4 import *
 import urllib.request
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QLineEdit, QMessageBox, QLabel, QDialog
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QLineEdit, QCheckBox, QLabel, QDialog
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSlot, QThread
 import webbrowser
 from time import sleep
-import re
+import os
 
-
-
-
+drive_train_choice = None
+vin_choice = None
+gear_box_choice = None
 value = None
 
 class App(QMainWindow):
@@ -29,25 +29,47 @@ class App(QMainWindow):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-        label = QLabel(self)
-        #creating a textbox?
+        self.gear_box = QCheckBox("Manual?", self)
+        self.vin = QCheckBox("Check Vin?", self)
+        self.gear_box.move(0, 320)
+        self.vin.move(60, 320)
+        #creating a textbox
         self.textbox = QLineEdit(self)
-        self.textbox.move(0,350)
-        self.textbox.resize(100,30)
+        self.textbox.move(0, 350)
+        self.textbox.resize(100, 30)
         button_submit_page_number = QPushButton("Page number", self)
         button_submit_page_number.move(0,380)
         button_submit_page_number.clicked.connect(self.on_click)
         textbox_value = self.textbox.text()
-
+        #Creating auto24 logo
         auto24 = QLabel(self)
         auto24_pic = QPixmap(self.auto_pic)
         auto24.setPixmap(auto24_pic)
         auto24.resize(444,86)
         auto24.move(350,0)
+
         self.show()
     def on_click(self):
         global value
-        value = self.textbox.text()
+        global gear_box_choice
+        global vin_choice
+        try:
+            value = self.textbox.text()
+        except:
+            os._exit(1)
+        gear_box_value = self.gear_box.isChecked()
+        vin_box_value = self.vin.isChecked()
+        if gear_box_value is True:
+            gear_box_choice = True
+        else:
+            gear_box_choice = False
+        if vin_box_value is True:
+            vin_choice = True
+        else:
+            vin_choice = False
+
+
+        print(gear_box_value)
         print("Page selected: " + value)
         self.threading.find_deals()
 class Scrape(QThread):
@@ -66,8 +88,12 @@ class Scrape(QThread):
 
     def find_deals(self):
         global value
-        value = int(value)
-        print("tesd")
+        try:
+            value = int(value)
+        except:
+            print("Incorrect value, exiting the program, PLEASE ONLY INPUT AN INTEGER")
+            os._exit(1)
+
         def page_algorithm(i): #An algorithm that makes it easy to turn to a next page
             if i > 1:
                 i = i * 50 - 50
@@ -127,28 +153,54 @@ class Scrape(QThread):
                     except AttributeError:
                         return False
                 def check_vin():
-                    car_info_table = car_deal.find('table', class_='section main-data')
-                    # Finding the info table
-                    table_type = car_info_table.find('tr', class_='field-tehasetahis')
-                    vin_preview = table_type.find('span', class_= 'preview')
-                    try:
-                        vin = vin_preview.text
-                        return True
-
-                    except AttributeError:
-                        return False
-                def check_gearbox():
-                    car_info_table = car_deal.find('table', class_='section main-data')
-                    table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
-                    value = table_type.find('span', class_='value')
-                    try:
-                        new_value = value.text
-                        if new_value == "manuaal":
+                    if vin_choice is True:
+                        car_info_table = car_deal.find('table', class_='section main-data')
+                        # Finding the info table
+                        table_type = car_info_table.find('tr', class_='field-tehasetahis')
+                        vin_preview = table_type.find('span', class_= 'preview')
+                        try:
+                            vin = vin_preview.text
                             return True
-                        else:
+
+                        except AttributeError:
                             return False
-                    except AttributeError:
-                        return False
+                    elif vin_choice is False:
+                        car_info_table = car_deal.find('table', class_='section main-data')
+                        # Finding the info table
+                        table_type = car_info_table.find('tr', class_='field-tehasetahis')
+                        vin_preview = table_type.find('span', class_='preview')
+                        try:
+                            vin = vin_preview.text
+                            return False
+
+                        except AttributeError:
+                            return True
+                def check_gearbox():
+                    
+                    if gear_box_choice is True:
+                        car_info_table = car_deal.find('table', class_='section main-data')
+                        table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
+                        value = table_type.find('span', class_='value')
+                        try:
+                            new_value = value.text
+                            if new_value == "manuaal":
+                                return True
+                            else:
+                                return False
+                        except AttributeError:
+                            return False
+                    elif gear_box_choice is False:
+                        car_info_table = car_deal.find('table', class_='section main-data')
+                        table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
+                        value = table_type.find('span', class_='value')
+                        try:
+                            new_value = value.text
+                            if new_value == "automaat":
+                                return True
+                            else:
+                                return False
+                        except AttributeError:
+                            return False
                 def check_drivetrain():
                     car_info_table = car_deal.find('table', class_="section main-data")
                     table_type = car_info_table.find('tr', class_='field-vedavsild')
@@ -188,7 +240,7 @@ class Scrape(QThread):
                     #print(discount_price.text)
 
                 if car_type() is True and odometer() is True and check_vin() is True and check_dealer() is True and \
-                check_gearbox() is True and check_drivetrain() is True:
+                check_gearbox() is True:
                     print("Car found, opening url...")
                     webbrowser.open(car_url)
         deals()
