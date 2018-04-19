@@ -180,7 +180,7 @@ class Scrape(QThread):
                         except AttributeError:
                             return True
                 def check_gearbox():
-                    
+
                     if gear_box_choice is True:
                         car_info_table = car_deal.find('table', class_='section main-data')
                         table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
@@ -259,7 +259,7 @@ class Scrape(QThread):
                 if car_type() is True and odometer() is True and check_vin() is True and check_dealer() is True and \
                 check_gearbox() is True and check_rwd() is True:
                     print("Car found, opening url...")
-                    webbrowser.open(car_url)
+                    webbrowser.get('firefox').open(car_url)
                 elif rwd is True and vin_choice is True and gear_box_choice is True:
                     def find_rwd_cars():
                         temp = 1
@@ -297,7 +297,8 @@ class Scrape(QThread):
                                             scam_check = False
                                         x = table_value.text
                                         if scam_check is False:
-                                            webbrowser.open(rwd_car_url)
+                                            webbrowser.get('firefox').open(rwd_car_url)
+
 
                                     except:
                                         pass
@@ -312,3 +313,4 @@ if __name__ == '__main__':
     ex = App()  # uncomment this later
     # lol = Scrape()
     sys.exit(app.exec_())
+c
