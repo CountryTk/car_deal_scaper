@@ -37,7 +37,8 @@ class App(QMainWindow):
         self.gear_box.move(0, 320)
         self.vin.move(60, 320)
         self.rwd.move(0, 300)
-
+        self.stopbutton = QPushButton("Exit", self)
+        self.stopbutton.clicked.connect(self.exit)
         #creating a textbox
         self.textbox = QLineEdit(self)
         self.textbox.move(0, 350)
@@ -84,6 +85,8 @@ class App(QMainWindow):
         print(gear_box_value)
         print("Page selected: " + value)
         self.threading.find_deals()
+    def exit():
+        os._exit(1)
 class Scrape(QThread):
     def __init__(self):
         super().__init__()
@@ -286,22 +289,9 @@ class Scrape(QThread):
                                     car_info_table = rwd_car_object.find('table', class_="section main-data")
                                     table_type = car_info_table.find('tr', class_="field-tehasetahis")
                                     table_value = table_type.find('span', class_="preview")
-                                    scam_car_info_table = rwd_car_object.find('h1', class_='commonSubtitle')  # GOing in the h1 class
-                                    scam_get_dealer = scam_car_info_table.find('a', class_='dealer-name')
-                                    try:
-                                        scam = scam_get_dealer.text
-                                        if scam == "- Autojärelmaks24 Kesk-Sõjamäe" or scam == "- Autojärelmaks24 Lasnamäe":  # Then checking if the car dealer is auto24jarelmaks(shit)
-                                            scam_check = True
-                                            print('test')
-                                        else:
-                                            scam_check = False
-                                        x = table_value.text
-                                        if scam_check is False:
-                                            webbrowser.get('firefox').open(rwd_car_url)
+                                    if vin is not None:
+                                        webbrowser.get('firefox').open(rwd_car_url)
 
-
-                                    except:
-                                        pass
 
                     find_rwd_cars()
 
@@ -313,4 +303,4 @@ if __name__ == '__main__':
     ex = App()  # uncomment this later
     # lol = Scrape()
     sys.exit(app.exec_())
-c
+
