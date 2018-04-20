@@ -90,18 +90,19 @@ class App(QMainWindow):
 
         print(gear_box_value)
         print("Page selected: " + value)
-        running = True
+        self.threading.running = True
         self.threading.find_deals()
 
     def wat(self):
         self.threading.running = False
+        print(self.threading.running)
         print("wat")
         #os._exit()
 class Scrape(QThread):
     def __init__(self):
         super().__init__()
         self.ok = 'wtf'
-        self.running = True
+        self.running = None
     def find_deals(self):
 
         while self.running:
@@ -117,229 +118,234 @@ class Scrape(QThread):
 
 
 
-            def deals():
-                 # Finding all the <a> tags in that table with a class small-image
-                i = 0
-                temporary = 1
-                for pagez in range(325):
-                    pagenumber = temporary * 50 - 50
 
-                    self.url = "http://www.auto24.ee/kasutatud/nimekiri.php?a=101&ak=" + str(pagenumber)
-                    print("Moving to page {}".format(self.url))
-                    self.urlreq = urllib.request.urlopen(self.url).read()
-                    self.soup = BeautifulSoup(self.urlreq, 'lxml')
-                    table = self.soup.find('table', class_='section search-list')  # Finding the table that has a class called section search-list
-                    #text = re.compile("kW$")  # using regex to see if a string ends with kW (this will not get the hrefs of pictures) ( NOT USING IT ATM )
-                    url = table.find_all('a', href=True, class_='small-image')
-                    for href in url:
-                        ok = href.get('href') # Finding all the href tags
-                        if ok.startswith('/used') and ok.endswith('#loan=72') is False:  # if the tag starts with /used then open it up also ignore loans
-                            car_url = "http://www.auto24.ee" + ok  # this will be the url we will be working on mainly
-                            new_url = urllib.request.urlopen(car_url).read()  # the beginning of creating a bs4 object
-                            i = i + 1
-                            print("Cars scanned: {} ".format(i))
+            # Finding all the <a> tags in that table with a class small-image
+            if self.running is False:
+                print("stoped")
+                break
+            i = 0
+            temporary = 1
+            for pagez in range(325):
+                pagenumber = temporary * 50 - 50
 
-                            car_deal = BeautifulSoup(new_url, 'lxml')  # Making it into an object
+                self.url = "http://www.auto24.ee/kasutatud/nimekiri.php?a=101&ak=" + str(pagenumber)
+                print("Moving to page {}".format(self.url))
+                self.urlreq = urllib.request.urlopen(self.url).read()
+                self.soup = BeautifulSoup(self.urlreq, 'lxml')
+                table = self.soup.find('table', class_='section search-list')  # Finding the table that has a class called section search-list
+                #text = re.compile("kW$")  # using regex to see if a string ends with kW (this will not get the hrefs of pictures) ( NOT USING IT ATM )
+                url = table.find_all('a', href=True, class_='small-image')
+                for href in url:
+                    ok = href.get('href') # Finding all the href tags
+                    if ok.startswith('/used') and ok.endswith('#loan=72') is False:  # if the tag starts with /used then open it up also ignore loans
+                        car_url = "http://www.auto24.ee" + ok  # this will be the url we will be working on mainly
+                        new_url = urllib.request.urlopen(car_url).read()  # the beginning of creating a bs4 object
+                        i = i + 1
+                        print("Cars scanned: {} ".format(i))
 
-                        def car_type():
+                        car_deal = BeautifulSoup(new_url, 'lxml')  # Making it into an object
 
-                            car_info_table = car_deal.find('table', class_='section main-data')  # Finding the info table
-                            table_type = car_info_table.find('tr', class_='field-liik')  # Finding the car type table
-                            table_value = table_type.find('span', class_='value')  # Getting the value
-                            type_of_car = table_value.text
-                            if type_of_car == "sõiduauto":
-                                return True
-                            else:
+                    def car_type():
+
+                        car_info_table = car_deal.find('table', class_='section main-data')  # Finding the info table
+                        table_type = car_info_table.find('tr', class_='field-liik')  # Finding the car type table
+                        table_value = table_type.find('span', class_='value')  # Getting the value
+                        type_of_car = table_value.text
+                        if type_of_car == "sõiduauto":
+                            return True
+                        else:
+                            return False
+
+                    def odometer():
+
+                        car_info_table = car_deal.find('table', class_='section main-data')
+                        # Finding the info table
+                        table_type = car_info_table.find('tr', class_='field-labisoit')
+                        # Finding the car odometer table
+                        table_value = table_type.find('span', class_='value')
+                        try:
+                            odometer_size = table_value.string
+                            nonBreakSpace = u'\xa0'  # Creating the breakspace so we could remove that
+                            odometer_size_int = odometer_size.replace('km', '')
+                            odometer_size_int_new = odometer_size_int.replace(nonBreakSpace, '')  # Removing &nonbreakspace
+                            if int(odometer_size_int_new) > 250000: # If there are more than 200k km on the odometer then it's bad
                                 return False
+                            else:
+                                return True
 
-                        def odometer():
-
+                        except AttributeError:
+                            return False
+                    def check_vin():
+                        if vin_choice is True:
                             car_info_table = car_deal.find('table', class_='section main-data')
                             # Finding the info table
-                            table_type = car_info_table.find('tr', class_='field-labisoit')
-                            # Finding the car odometer table
-                            table_value = table_type.find('span', class_='value')
+                            table_type = car_info_table.find('tr', class_='field-tehasetahis')
+                            vin_preview = table_type.find('span', class_= 'preview')
                             try:
-                                odometer_size = table_value.string
-                                nonBreakSpace = u'\xa0'  # Creating the breakspace so we could remove that
-                                odometer_size_int = odometer_size.replace('km', '')
-                                odometer_size_int_new = odometer_size_int.replace(nonBreakSpace, '')  # Removing &nonbreakspace
-                                if int(odometer_size_int_new) > 250000: # If there are more than 200k km on the odometer then it's bad
-                                    return False
-                                else:
-                                    return True
+                                vin = vin_preview.text
+                                return True
 
                             except AttributeError:
                                 return False
-                        def check_vin():
-                            if vin_choice is True:
-                                car_info_table = car_deal.find('table', class_='section main-data')
-                                # Finding the info table
-                                table_type = car_info_table.find('tr', class_='field-tehasetahis')
-                                vin_preview = table_type.find('span', class_= 'preview')
-                                try:
-                                    vin = vin_preview.text
-                                    return True
-
-                                except AttributeError:
-                                    return False
-                            elif vin_choice is False:
-                                car_info_table = car_deal.find('table', class_='section main-data')
-                                # Finding the info table
-                                table_type = car_info_table.find('tr', class_='field-tehasetahis')
-                                vin_preview = table_type.find('span', class_='preview')
-                                try:
-                                    vin = vin_preview.text
-                                    return False
-
-                                except AttributeError:
-                                    return True
-                        def check_gearbox():
-
-                            if gear_box_choice is True:
-                                car_info_table = car_deal.find('table', class_='section main-data')
-                                table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
-                                value = table_type.find('span', class_='value')
-                                try:
-                                    new_value = value.text
-                                    if new_value == "manuaal":
-                                        return True
-                                    else:
-                                        return False
-                                except AttributeError:
-                                    return False
-                            elif gear_box_choice is False:
-                                car_info_table = car_deal.find('table', class_='section main-data')
-                                table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
-                                value = table_type.find('span', class_='value')
-                                try:
-                                    new_value = value.text
-                                    if new_value == "automaat":
-                                        return True
-                                    else:
-                                        return False
-                                except AttributeError:
-                                    return False
-
-                        def check_rwd():
-                            if rwd is True:
-                                car_info_table = car_deal.find('table', class_="section main-data")
-                                table_type = car_info_table.find('tr', class_='field-vedavsild')
-                                value = table_type.find('span', class_='value')
-                                try:
-                                    new_value = value.text
-                                    if new_value == "tagavedu":
-                                        return True
-                                except AttributeError:
-                                    return False
-                            elif rwd is False:
-                                car_info_table = car_deal.find('table', class_="section main-data")
-                                table_type = car_info_table.find('tr', class_='field-vedavsild')
-                                value = table_type.find('span', class_='value')
-                                try:
-                                    new_value = value.text
-                                    if new_value == "esivedu":
-                                        return True
-                                except AttributeError:
-                                    return False
-                        def check_dealer():
-                            car_info_table = car_deal.find('h1', class_='commonSubtitle')  # GOing in the h1 class
-                            get_dealer = car_info_table.find('a', class_='dealer-name')
+                        elif vin_choice is False:
+                            car_info_table = car_deal.find('table', class_='section main-data')
+                            # Finding the info table
+                            table_type = car_info_table.find('tr', class_='field-tehasetahis')
+                            vin_preview = table_type.find('span', class_='preview')
                             try:
-                                scam = get_dealer.text
-                                if scam == "- Autojärelmaks24 Kesk-Sõjamäe" or scam == "- Autojärelmaks24 Lasnamäe":  # Then checking if the car dealer is auto24jarelmaks(shit)
-                                    return False
-                                else:
-                                    return True
+                                vin = vin_preview.text
+                                return False
+
                             except AttributeError:
                                 return True
+                    def check_gearbox():
 
-                        def check_price():
+                        if gear_box_choice is True:
                             car_info_table = car_deal.find('table', class_='section main-data')
-                            table_type = car_info_table.find('tr', class_='field-hind')
-                            price_table = table_type.find('td', class_='field')
-                            price = price_table.find('span', class_="value")
-                            discount_table_type = car_info_table.find('tr', class_='field-soodushind')
+                            table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
+                            value = table_type.find('span', class_='value')
                             try:
-                                discount_price_table = discount_table_type.find('td', class_='field')
-                                discount_price = discount_price_table.find('span', class_="value")
-                                print("Discount price: " + discount_price.text)
-                                print("Price: " + price.text)
-                            except:
-                                print("car has no discount price")
+                                new_value = value.text
+                                if new_value == "manuaal":
+                                    return True
+                                else:
+                                    return False
+                            except AttributeError:
+                                return False
+                        elif gear_box_choice is False:
+                            car_info_table = car_deal.find('table', class_='section main-data')
+                            table_type = car_info_table.find('tr', class_='field-kaigukast_kaikudega')
+                            value = table_type.find('span', class_='value')
+                            try:
+                                new_value = value.text
+                                if new_value == "automaat":
+                                    return True
+                                else:
+                                    return False
+                            except AttributeError:
+                                return False
 
-                            #print(discount_price.text)
-                        def best_car():
-                            pass
-                        if car_type() is True and odometer() is True and check_vin() is True and check_dealer() is True and \
-                        check_gearbox() is True and check_rwd() is True:
+                    def check_rwd():
+                        if rwd is True:
+                            car_info_table = car_deal.find('table', class_="section main-data")
+                            table_type = car_info_table.find('tr', class_='field-vedavsild')
+                            value = table_type.find('span', class_='value')
+                            try:
+                                new_value = value.text
+                                if new_value == "tagavedu":
+                                    return True
+                            except AttributeError:
+                                return False
+                        elif rwd is False:
+                            car_info_table = car_deal.find('table', class_="section main-data")
+                            table_type = car_info_table.find('tr', class_='field-vedavsild')
+                            value = table_type.find('span', class_='value')
+                            try:
+                                new_value = value.text
+                                if new_value == "esivedu":
+                                    return True
+                            except AttributeError:
+                                return False
+                    def check_dealer():
+                        car_info_table = car_deal.find('h1', class_='commonSubtitle')  # GOing in the h1 class
+                        get_dealer = car_info_table.find('a', class_='dealer-name')
+                        try:
+                            scam = get_dealer.text
+                            if scam == "- Autojärelmaks24 Kesk-Sõjamäe" or scam == "- Autojärelmaks24 Lasnamäe":  # Then checking if the car dealer is auto24jarelmaks(shit)
+                                return False
+                            else:
+                                return True
+                        except AttributeError:
+                            return True
 
-                            print("Car found, opening url...")
-                            webbrowser.get('firefox').open(car_url)
-                            print("Waiting 10 seconds....")
-                            QtTest.QTest.qWait(10000)
+                    def check_price():
+                        car_info_table = car_deal.find('table', class_='section main-data')
+                        table_type = car_info_table.find('tr', class_='field-hind')
+                        price_table = table_type.find('td', class_='field')
+                        price = price_table.find('span', class_="value")
+                        discount_table_type = car_info_table.find('tr', class_='field-soodushind')
+                        try:
+                            discount_price_table = discount_table_type.find('td', class_='field')
+                            discount_price = discount_price_table.find('span', class_="value")
+                            print("Discount price: " + discount_price.text)
+                            print("Price: " + price.text)
+                        except:
+                            print("car has no discount price")
 
-                        elif rwd is True and vin_choice is True and gear_box_choice is True:
-                            def find_rwd_cars():
-                                temp = 1
-                                for page in range(11): # &ak=50
-                                    page = temp * 50 - 50
-                                    temp += 1
-                                    #print(page)
-                                    rwd_car_deal = urllib.request.urlopen('http://www.auto24.ee/kasutatud/nimekiri.php?bn=2&a=101&aj=&i=1&p=2&ae=2&af=50&ag=0&ag=1&otsi=otsi&ak=' +str(page)).read()
-                                    soup = BeautifulSoup(rwd_car_deal, 'lxml')
+                        #print(discount_price.text)
+                    def best_car():
+                        pass
+                    if car_type() is True and odometer() is True and check_vin() is True and check_dealer() is True and \
+                    check_gearbox() is True and check_rwd() is True:
 
-                                    rwd_table = soup.find('table', class_="section search-list")
-                                    rwd_url = rwd_table.find_all('a', href=True, class_="small-image")
-                                    car_count = 0
-                                    for rwd_href in rwd_url:
-                                        rwd_link = rwd_href.get('href')
-                                        print(rwd_link)
+                        print("Car found, opening url...")
+                        print(self.running)
+                        webbrowser.get('firefox').open(car_url)
+                        print("Waiting 10 seconds....")
+                        QtTest.QTest.qWait(10000)
 
-                                        if rwd_link.startswith('/used') and rwd_link.endswith('#loan=72') is False:
-                                            rwd_car_url = "http://www.auto24.ee" + rwd_link
-                                            rwd_car_url_2 = urllib.request.urlopen(rwd_car_url).read()
+                    elif rwd is True and vin_choice is True and gear_box_choice is True:
+                        def find_rwd_cars():
+                            temp = 1
+                            for page in range(11): # &ak=50
+                                page = temp * 50 - 50
+                                temp += 1
+                                #print(page)
+                                rwd_car_deal = urllib.request.urlopen('http://www.auto24.ee/kasutatud/nimekiri.php?bn=2&a=101&aj=&i=1&p=2&ae=2&af=50&ag=0&ag=1&otsi=otsi&ak=' +str(page)).read()
+                                soup = BeautifulSoup(rwd_car_deal, 'lxml')
 
-                                            rwd_car_object = BeautifulSoup(rwd_car_url_2, 'lxml')
-                                            #Vin code
-                                            vin_car_info_table = rwd_car_object.find('table', class_="section main-data")
-                                            vin_table_type = vin_car_info_table.find('tr', class_="field-tehasetahis")
-                                            vin_table_value = vin_table_type.find('span', class_="preview")
-                                            vin = None
-                                            def scam_checker():
-                                                scam_car_info_table = rwd_car_object.find('h1', class_="commonSubtitle")
-                                                scam_car_dealer = scam_car_info_table.find('a', class_="dealer-name")
-                                                try:
-                                                    dealer = scam_car_dealer.text
-                                                    if dealer .startswith('- Autojärelmaks24'):
-                                                        return False
-                                                    else:
-                                                        return True
-                                                except:
-                                                    return True
+                                rwd_table = soup.find('table', class_="section search-list")
+                                rwd_url = rwd_table.find_all('a', href=True, class_="small-image")
+                                car_count = 0
+                                for rwd_href in rwd_url:
+                                    rwd_link = rwd_href.get('href')
+                                    print(rwd_link)
 
+                                    if rwd_link.startswith('/used') and rwd_link.endswith('#loan=72') is False:
+                                        rwd_car_url = "http://www.auto24.ee" + rwd_link
+                                        rwd_car_url_2 = urllib.request.urlopen(rwd_car_url).read()
+
+                                        rwd_car_object = BeautifulSoup(rwd_car_url_2, 'lxml')
+                                        #Vin code
+                                        vin_car_info_table = rwd_car_object.find('table', class_="section main-data")
+                                        vin_table_type = vin_car_info_table.find('tr', class_="field-tehasetahis")
+                                        vin_table_value = vin_table_type.find('span', class_="preview")
+                                        vin = None
+                                        def scam_checker():
+                                            scam_car_info_table = rwd_car_object.find('h1', class_="commonSubtitle")
+                                            scam_car_dealer = scam_car_info_table.find('a', class_="dealer-name")
                                             try:
-                                                vin = vin_table_value.text
+                                                dealer = scam_car_dealer.text
+                                                if dealer .startswith('- Autojärelmaks24'):
+                                                    return False
+                                                else:
+                                                    return True
+                                            except:
+                                                return True
 
-                                            except AttributeError:
-                                                pass
+                                        try:
+                                            vin = vin_table_value.text
 
-                                            if vin is not None and scam_checker() is True:
+                                        except AttributeError:
+                                            pass
 
-                                                print("Car found...")
-                                                webbrowser.get('firefox').open(rwd_car_url)
-                                                print("Waiting 10 seconds...")
+                                        if vin is not None and scam_checker() is True:
+                                            print(self.running)
 
-                                                QtTest.QTest.qWait(10000)
+                                            print("Car found...")
+                                            webbrowser.get('firefox').open(rwd_car_url)
+                                            print("Waiting 10 seconds...")
 
-
-
-                            find_rwd_cars()
-                    temporary += 1
-
+                                            QtTest.QTest.qWait(10000)
 
 
-            deals()
+
+                        find_rwd_cars()
+                temporary += 1
+
+
+
+            #deals()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
