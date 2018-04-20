@@ -96,38 +96,43 @@ class App(QMainWindow):
     def wat(self):
         self.threading.running = False
         print(self.threading.running)
-        print("wat")
         #os._exit()
 class Scrape(QThread):
     def __init__(self):
         super().__init__()
-        self.ok = 'wtf'
+        self.ok = 'xd'
         self.running = None
     def find_deals(self):
 
-        while self.running:
-            if self.running is False:
-                print("gayt")
-                break
+        while self.running is True:
+
+
+
             global value
             try:
                 value = int(value)
+                print(self.ok)
+
             except:
                 print("Incorrect value, ing the program, PLEASE ONLY INPUT AN INTEGER")
                 os._exit()
 
-
-
-
-            # Finding all the <a> tags in that table with a class small-image
-            if self.running is False:
-                print("stoped")
-                break
             i = 0
+
             temporary = 1
+            if self.running is True:
+                pass
+
+            else:
+                print("Exiting loop")
+                break
             for pagez in range(325):
                 pagenumber = temporary * 50 - 50
-
+                if self.running is True:
+                    pass
+                else:
+                    print("Exiting loop")
+                    break
                 self.url = "http://www.auto24.ee/kasutatud/nimekiri.php?a=101&ak=" + str(pagenumber)
                 print("Moving to page {}".format(self.url))
                 self.urlreq = urllib.request.urlopen(self.url).read()
@@ -142,7 +147,12 @@ class Scrape(QThread):
                         new_url = urllib.request.urlopen(car_url).read()  # the beginning of creating a bs4 object
                         i = i + 1
                         print("Cars scanned: {} ".format(i))
-
+                        if self.running is True:
+                            pass
+                            print("wtf")
+                        else:
+                            print("Exiting loop")
+                            break
                         car_deal = BeautifulSoup(new_url, 'lxml')  # Making it into an object
 
                     def car_type():
@@ -290,6 +300,11 @@ class Scrape(QThread):
                             for page in range(11): # &ak=50
                                 page = temp * 50 - 50
                                 temp += 1
+                                if self.running is True:
+                                    pass
+                                else:
+                                    print("Exiting loop")
+                                    break
                                 #print(page)
                                 rwd_car_deal = urllib.request.urlopen('http://www.auto24.ee/kasutatud/nimekiri.php?bn=2&a=101&aj=&i=1&p=2&ae=2&af=50&ag=0&ag=1&otsi=otsi&ak=' +str(page)).read()
                                 soup = BeautifulSoup(rwd_car_deal, 'lxml')
@@ -300,7 +315,11 @@ class Scrape(QThread):
                                 for rwd_href in rwd_url:
                                     rwd_link = rwd_href.get('href')
                                     print(rwd_link)
-
+                                    if self.running is True:
+                                        pass
+                                    else:
+                                        print("Exiting loop")
+                                        break
                                     if rwd_link.startswith('/used') and rwd_link.endswith('#loan=72') is False:
                                         rwd_car_url = "http://www.auto24.ee" + rwd_link
                                         rwd_car_url_2 = urllib.request.urlopen(rwd_car_url).read()
