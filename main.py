@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAc
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSlot, QThread
 import webbrowser
+from PyQt5 import QtTest
 import pymsgbox
 import os
 
@@ -38,7 +39,7 @@ class App(QMainWindow):
         self.vin.move(60, 320)
         self.rwd.move(0, 300)
         self.stopbutton = QPushButton("Exit", self)
-        self.stopbutton.clicked.connect(self.exit)
+        self.stopbutton.clicked.connect(self.aexit)
         #creating a textbox
         self.textbox = QLineEdit(self)
         self.textbox.move(0, 350)
@@ -64,7 +65,7 @@ class App(QMainWindow):
         try:
             value = self.textbox.text()
         except:
-            os._exit(1)
+            os._exit()
         gear_box_value = self.gear_box.isChecked()
         vin_box_value = self.vin.isChecked()
         rwd_check = self.rwd.isChecked()
@@ -85,8 +86,9 @@ class App(QMainWindow):
         print(gear_box_value)
         print("Page selected: " + value)
         self.threading.find_deals()
-    def exit():
-        os._exit(1)
+
+    def aexit():
+        os._exit()
 class Scrape(QThread):
     def __init__(self):
         super().__init__()
@@ -97,8 +99,8 @@ class Scrape(QThread):
         try:
             value = int(value)
         except:
-            print("Incorrect value, exiting the program, PLEASE ONLY INPUT AN INTEGER")
-            os._exit(1)
+            print("Incorrect value, ing the program, PLEASE ONLY INPUT AN INTEGER")
+            os._exit()
 
         def page_algorithm(i): #An algorithm that makes it easy to turn to a next page
             if i > 1:
@@ -261,8 +263,12 @@ class Scrape(QThread):
                     pass
                 if car_type() is True and odometer() is True and check_vin() is True and check_dealer() is True and \
                 check_gearbox() is True and check_rwd() is True:
+
                     print("Car found, opening url...")
                     webbrowser.get('firefox').open(car_url)
+                    print("Waiting 10 seconds....")
+                    QtTest.QTest.qWait(10000)
+
                 elif rwd is True and vin_choice is True and gear_box_choice is True:
                     def find_rwd_cars():
                         temp = 1
@@ -285,12 +291,36 @@ class Scrape(QThread):
                                     rwd_car_url_2 = urllib.request.urlopen(rwd_car_url).read()
 
                                     rwd_car_object = BeautifulSoup(rwd_car_url_2, 'lxml')
+                                    #Vin code
+                                    vin_car_info_table = rwd_car_object.find('table', class_="section main-data")
+                                    vin_table_type = vin_car_info_table.find('tr', class_="field-tehasetahis")
+                                    vin_table_value = vin_table_type.find('span', class_="preview")
+                                    vin = None
+                                    def scam_checker():
+                                        scam_car_info_table = rwd_car_object.find('h1', class_="commonSubtitle")
+                                        scam_car_dealer = scam_car_info_table.find('a', class_="dealer-name")
+                                        try:
+                                            dealer = scam_car_dealer.text
+                                            if dealer .startswith('- Autojärelmaks24'):
+                                                return False
+                                            else:
+                                                return True
+                                        except:
+                                            return True
 
-                                    car_info_table = rwd_car_object.find('table', class_="section main-data")
-                                    table_type = car_info_table.find('tr', class_="field-tehasetahis")
-                                    table_value = table_type.find('span', class_="preview")
-                                    if vin is not None:
+                                    try:
+                                        vin = vin_table_value.text
+
+                                    except AttributeError:
+                                        pass
+
+                                    if vin is not None and scam_checker() is True:
+
+                                        print("Car found...")
                                         webbrowser.get('firefox').open(rwd_car_url)
+                                        print("Waiting 10 seconds...")
+                                        QtTest.QTest.qWait(10000)
+
 
 
                     find_rwd_cars()
@@ -303,4 +333,3 @@ if __name__ == '__main__':
     ex = App()  # uncomment this later
     # lol = Scrape()
     sys.exit(app.exec_())
-
