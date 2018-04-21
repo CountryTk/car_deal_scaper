@@ -38,7 +38,7 @@ class App(QMainWindow):
         self.gear_box.move(0, 320)
         self.vin.move(70, 320)
         self.rwd.move(0, 300)
-        self.stopbutton = QPushButton("Exit", self)
+        self.stopbutton = QPushButton("Stop searching", self)
         self.stopbutton.clicked.connect(self.wat)
         #creating a textbox
         self.textbox = QLineEdit(self)
@@ -52,13 +52,19 @@ class App(QMainWindow):
         button_submit_page_number.move(0,380)
         button_submit_page_number.clicked.connect(self.on_click)
         textbox_value = self.textbox.text()
-        #Creating auto24 logo
-        auto24 = QLabel(self)
-        auto24_pic = QPixmap(self.auto_pic)
-        auto24.setPixmap(auto24_pic)
-        auto24.resize(444, 86)
-        auto24.move(350, 0)
-
+        #Help label
+        help_label = QLabel('''How to use:
+        Checking the "Manual" checkbox will only look for manual transmission
+        cars, unchecking it will only look for automatic transmission carsself.
+        Checking "RWD?" will only look for rear wheel drive cars and unchecking
+        it will only look for front wheel drive cars. Checking "Check Vin?" will
+        only look for cars that have vin codes and unchecking it only looks for cars
+        without vin code. (Might want to fix this logic later). Pressing "Stop searching"
+        button works only when the program has already opened 1 page, then
+        you have 10 seconds to press the button.
+         ''', self)
+        help_label.move(330,0)
+        help_label.resize(600,180)
         self.show()
     def on_click(self):
         global value
@@ -149,7 +155,7 @@ class Scrape(QThread):
                         print("Cars scanned: {} ".format(i))
                         if self.running is True:
                             pass
-                            print("wtf")
+
                         else:
                             print("Exiting loop")
                             break
