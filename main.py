@@ -54,16 +54,17 @@ class App(QMainWindow):
         textbox_value = self.textbox.text()
         #Help label
         help_label = QLabel('''How to use:
-        Checking the "Manual" checkbox will only look for manual transmission
-        cars, unchecking it will only look for automatic transmission carsself.
-        Checking "RWD?" will only look for rear wheel drive cars and unchecking
-        it will only look for front wheel drive cars. Checking "Check Vin?" will
-        only look for cars that have vin codes and unchecking it only looks for cars
-        without vin code. (Might want to fix this logic later). Pressing "Stop searching"
-        button works only when the program has already opened 1 page, then
-        you have 10 seconds to press the button.
+        1) Checking the "Manual" checkbox will only look for manual transmission
+        cars, unchecking it will only look for automatic transmission cars.
+        2) Checking "RWD?" will only look for rear wheel drive cars and unchecking
+        it will only look for front wheel drive cars.
+        3) Checking "Check Vin?" will only look for cars that have vin codes and
+        unchecking it only looks for cars
+        without vin code. (Might want to fix this logic later).
+        4) Pressing "Stop searching" button works only when the program has already
+        opened 1 page, then you have 10 seconds to press the button.
          ''', self)
-        help_label.move(330,0)
+        help_label.move(320,0)
         help_label.resize(600,180)
         self.show()
     def on_click(self):
@@ -111,8 +112,6 @@ class Scrape(QThread):
     def find_deals(self):
 
         while self.running is True:
-
-
 
             global value
             try:
