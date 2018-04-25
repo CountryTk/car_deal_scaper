@@ -8,13 +8,14 @@ from bs4 import *
 import urllib.request
 import webbrowser
 from PyQt5 import QtTest
-
+import os
 
 fwd = None
 rwd = None
 vin_choice = None
 gear_box_choice = None
 value = None
+running = None
 
 class App(QWidget):
     def __init__(self):
@@ -37,8 +38,7 @@ class App(QWidget):
         self.gear_box.move(0, 320)
         self.vin.move(70, 320)
         self.rwd.move(0, 300)
-        self.stopbutton = QPushButton("Stop searching", self)
-        self.stopbutton.clicked.connect(self.wat)
+
         #creating a textbox
         self.textbox = QLineEdit(self)
         self.textbox.move(0, 350)
@@ -47,7 +47,8 @@ class App(QWidget):
         newlabel.move(100,350)
         newlabel.resize(200,30)
         button_submit_page_number = QPushButton("Search", self)
-
+        autist = QPushButton('fuckoff', self)
+        autist.clicked.connect(self.wat)
         button_submit_page_number.move(0,380)
         button_submit_page_number.clicked.connect(self.on_click)
         textbox_value = self.textbox.text()
@@ -55,13 +56,11 @@ class App(QWidget):
         help_label = QLabel('''How to use:
         1) Checking the "Manual" checkbox will only look for manual transmission
         cars, unchecking it will only look for automatic transmission cars.
-        2) Checking "RWD?" will only look for rear wheel drive cars and unchecking
+        2) Checking "RWD?sys" will only look for rear wheel drive cars and unchecking
         it will only look for front wheel drive cars.
         3) Checking "Check Vin?" will only look for cars that have vin codes and
         unchecking it only looks for cars
-        without vin code. (Might want to fix this logic later).
-        4) Pressing "Stop searching" button works only when the program has already
-        opened 1 page, then you have 10 seconds to press the button.
+        without vin code.
          ''', self)
         help_label.move(320,0)
         help_label.resize(600,180)
@@ -74,8 +73,10 @@ class App(QWidget):
         global vin_choice
         global fwd
         global rwd
+        global running
+
         try:
-            value = self.textbox.text()
+            value = self.tsysextbox.text()
             print(value)
         except:
             pass
@@ -97,15 +98,27 @@ class App(QWidget):
             rwd = False
 
 
-
-        print("Page selected: " + value)
+        running = True
+        print("Page selected: " + str(value))
         self.on_click_run()
     def auto24_scraper(self):
-        while True:
+        global running
+        while running:
             i = 0
             temporary = 1
+            if running is True:
+                print(running)
+            else:
+                print("Breaking")
+                break
             for pages in range(325):
+
                 pagenumber = temporary * 50 - 50
+                if running is True:
+                    pass
+                else:
+                    print("Breaking")
+                    break
                 url = "http://www.auto24.ee/kasutatud/nimekiri.php?a=101&ak=" + str(pagenumber)
                 print("Moving to page: {}".format(url))
                 print("Currently on page: {}".format(temporary))
@@ -114,6 +127,7 @@ class App(QWidget):
                 table = object.find('table', class_="section search-list")
                 url = table.find_all('a', href=True, class_="small-image")
                 for href in url:
+
                     ok = href.get('href')
                     if ok.startswith('/used') and ok.endswith('#loan=72') is False:
                         car_url = "http://www.auto24.ee" + ok
@@ -121,6 +135,11 @@ class App(QWidget):
                         new_url = urllib.request.urlopen(car_url).read()
                         i += 1
                         print("Cars scanned {}".format(i))
+                        if running is True:
+                            pass
+                        elif running is False:
+                            print("Breaking...")
+                            break
                         car_deal = BeautifulSoup(new_url, 'lxml')
 
                     def odometer():
@@ -228,10 +247,11 @@ class App(QWidget):
                         try:
                             discount_price_table = discount_table_type.find('td', class_='field')
                             discount_price = discount_price_table.find('span', class_="value")
-                            print("Discount price: " + discount_price.text)
                             print("Price: " + price.text)
+                            print("Discount price: " + discount_price.text)
+
                         except:
-                            print("car has no discount price")
+                            print("Car has no discount price")
 
                     if check_vin() is True and check_gearbox() is True and check_rwd() is True and check_dealer() is True:
                         print("Car found...")
@@ -245,14 +265,11 @@ class App(QWidget):
                 temporary += 1
 
     def wat(self):
-        
+        os._exit(1)
     def on_click_run(self):
-        first_thread = Process(target=self.auto24_scraper)
-        second_thread = Process(target=self.wat)
-        first_thread.start()
-        second_thread.start()
+        self.auto24_scraper()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
-    sys.exit(app.exec_())
+    os._exit(app.exec_())
