@@ -6,9 +6,12 @@ from multiprocessing import Process
 from time import sleep
 from bs4 import *
 import urllib.request
+from subprocess import Popen, PIPE
 import webbrowser
+import platform
 from PyQt5 import QtTest
 import os
+import pwd
 
 fwd = None
 rwd = None
@@ -26,8 +29,10 @@ class App(QWidget):
         self.width = 800
         self.height = 600
         self.run = True
+        #self.ignore()
         self.initUI()
 
+    
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
@@ -47,7 +52,7 @@ class App(QWidget):
         newlabel.move(100,350)
         newlabel.resize(200,30)
         button_submit_page_number = QPushButton("Search", self)
-        autist = QPushButton('fuckoff', self)
+        autist = QPushButton('Exit', self)
         autist.clicked.connect(self.wat)
         button_submit_page_number.move(0,380)
         button_submit_page_number.clicked.connect(self.on_click)
@@ -64,6 +69,10 @@ class App(QWidget):
          ''', self)
         help_label.move(320,0)
         help_label.resize(600,180)
+        odometer_value = QLabel("Maksimum läbisõit (km)", self)
+        self.odometer_value_box = QLineEdit(self)
+        self.odometer_value_box.move(0,270)
+        odometer_value.move(0, 250)
         self.show()
 
     @pyqtSlot()
@@ -76,7 +85,10 @@ class App(QWidget):
         global running
 
         try:
-            value = self.tsysextbox.text()
+            odometer_value = self.odometer_value_box.text()
+            odometer_value_int = int(odometer_value)
+            print(odometer_value_int)
+            value = self.textbox.text()
             print(value)
         except:
             pass
@@ -85,7 +97,7 @@ class App(QWidget):
         rwd_check = self.rwd.isChecked()
         if gear_box_value is True:
             gear_box_choice = True
-            print('shit')
+
         else:
             gear_box_choice = False
         if vin_box_value is True:
@@ -151,7 +163,7 @@ class App(QWidget):
                             nonBreakSpace = u'\xa0'  # Creating the breakspace so we could remove that
                             odometer_size_int = odometer_size.replace('km', '')
                             odometer_size_int_new = odometer_size_int.replace(nonBreakSpace, '')  # Removing &nonbreakspace
-                            if int(odometer_size_int_new) > 250000: # If there are more than 200k km on the odometer then it's bad
+                            if int(odometer_size_int_new) > int(self.odometer_value_box.text()): # If there are more than 200k km on the odometer then it's bad
                                 return False
                             else:
                                 return True
@@ -253,14 +265,14 @@ class App(QWidget):
                         except:
                             print("Car has no discount price")
 
-                    if check_vin() is True and check_gearbox() is True and check_rwd() is True and check_dealer() is True:
+                    if check_vin() is True and check_gearbox() is True and check_rwd() is True and check_dealer() is True \
+                            and odometer() is True:
                         print("Car found...")
                         print("Opening...")
-                        print("Waiting 10 seconds...")
+                        print("Waiting 20 seconds...")
                         check_price()
                         webbrowser.get('firefox').open(car_url)
-                        QtTest.QTest.qWait(10000)
-
+                        QtTest.QTest.qWait(20000)
 
                 temporary += 1
 
