@@ -1,7 +1,7 @@
 # car_deal_scaper
 Scrapes the website Auto24 for "good" deals.
 
-By "good" deals I mean parameters that I set up myself that qualify a car as good.
+
 If you want to use this program for commercial use, then please let me know!
 
 For example:
