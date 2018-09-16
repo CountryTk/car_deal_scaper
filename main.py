@@ -11,11 +11,9 @@ import webbrowser
 import platform
 from PyQt5 import QtTest
 import os
-import pwd
 
 
-
-class App(QWidget):
+clbass App(QWidget):
     def __init__(self):
         super().__init__()
         self.title = 'Car deal finder'
