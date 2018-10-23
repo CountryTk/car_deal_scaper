@@ -13,7 +13,7 @@ from PyQt5 import QtTest
 import os
 
 
-clbass App(QWidget):
+class App(QWidget):
     def __init__(self):
         super().__init__()
         self.title = 'Car deal finder'
